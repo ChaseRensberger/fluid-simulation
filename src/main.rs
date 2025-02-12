@@ -1,7 +1,9 @@
 use bevy::{prelude::*, window::WindowResolution};
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
-const WINDOW_WIDTH: f32 = 800.;
-const WINDOW_HEIGHT: f32 = 800.;
+const WINDOW_DIMENSIONS: Vec2 = Vec2::new(1400., 800.);
+const BOUNDING_BOX_DIMENSIONS: Vec2 = Vec2::new(WINDOW_DIMENSIONS.x / 2., WINDOW_DIMENSIONS.y / 2.);
+
 const GRAVITY: f32 = 100.;
 const PARTICLE_SIZE: f32 = 30.;
 
@@ -11,6 +13,30 @@ struct Particle;
 #[derive(Component)]
 struct Velocity(Vec3);
 
+#[derive(Bundle)]
+struct BoundingBoxBundle {
+    sprite: Sprite,
+    transform: Transform,
+}
+
+enum BoundingBoxLocation {
+    Left,
+    Right,
+    Bottom,
+    Top,
+}
+
+impl BoundingBoxLocation {
+    fn position(&self) -> Vec2 {
+        match self {
+            BoundingBoxLocation::Left => Vec2::new(-BOUNDING_BOX_DIMENSIONS.x / 2., 0.),
+            BoundingBoxLocation::Right => Vec2::new(BOUNDING_BOX_DIMENSIONS.x / 2., 0.),
+            BoundingBoxLocation::Bottom => Vec2::new(BOUNDING_BOX_DIMENSIONS.y / 2., 0.),
+            BoundingBoxLocation::Top => Vec2::new(-BOUNDING_BOX_DIMENSIONS.y / 2., 0.),
+        }
+    }
+}
+
 fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -18,6 +44,7 @@ fn setup(
 ) {
     commands.spawn(Camera2d);
 
+    // Particle
     commands.spawn((
         Particle,
         Velocity(Vec3::ZERO),
@@ -42,7 +69,7 @@ fn apply_gravity(mut query: Query<&mut Velocity>, time: Res<Time>) {
 
 fn resolve_collisions(mut query: Query<(&mut Transform, &mut Velocity)>) {
     for (transform, mut velocity) in &mut query {
-        if transform.translation.y < -((WINDOW_HEIGHT / 2.) - PARTICLE_SIZE / 2.) {
+        if transform.translation.y < -((WINDOW_DIMENSIONS.y / 2.) - PARTICLE_SIZE / 2.) {
             velocity.0.y *= -1.;
         }
     }
@@ -52,12 +79,13 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
-                resolution: WindowResolution::new(WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32),
+                resolution: WindowResolution::new(WINDOW_DIMENSIONS.x, WINDOW_DIMENSIONS.y),
                 resizable: false,
                 ..default()
             }),
             ..default()
         }))
+        .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, setup)
         .add_systems(
             FixedUpdate,

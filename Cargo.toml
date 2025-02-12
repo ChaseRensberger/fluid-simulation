@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 bevy = "0.15.2"
+bevy-inspector-egui = "0.29.1"
 
 # Enable a small amount of optimization in the dev profile.
 [profile.dev]
