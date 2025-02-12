@@ -1,10 +1,11 @@
 use bevy::{prelude::*, window::WindowResolution};
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+// use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_inspector_egui::prelude::*;
+use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 const WINDOW_DIMENSIONS: Vec2 = Vec2::new(1400., 800.);
 const BOUNDING_BOX_DIMENSIONS: Vec2 = Vec2::new(WINDOW_DIMENSIONS.x / 2., WINDOW_DIMENSIONS.y / 2.);
 
-const GRAVITY: f32 = 100.;
 const PARTICLE_SIZE: f32 = 30.;
 
 #[derive(Component)]
@@ -17,6 +18,13 @@ struct Velocity(Vec3);
 struct BoundingBoxBundle {
     sprite: Sprite,
     transform: Transform,
+}
+
+#[derive(Reflect, Resource, Default, InspectorOptions)]
+#[reflect(Resource, InspectorOptions)]
+struct Configuration {
+    #[inspector(min = 0.0, max = 1000.0)]
+    gravity: f32,
 }
 
 enum BoundingBoxLocation {
@@ -61,9 +69,9 @@ fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>, time: Res<Time>
     }
 }
 
-fn apply_gravity(mut query: Query<&mut Velocity>, time: Res<Time>) {
+fn apply_gravity(mut query: Query<&mut Velocity>, time: Res<Time>, config: Res<Configuration>) {
     for mut velocity in &mut query {
-        velocity.0 += Vec3::new(0., -1., 0.) * GRAVITY * time.delta_secs();
+        velocity.0 += Vec3::new(0., -1., 0.) * config.gravity * time.delta_secs();
     }
 }
 
@@ -85,7 +93,16 @@ fn main() {
             }),
             ..default()
         }))
-        .add_plugins(WorldInspectorPlugin::new())
+        // .add_plugins(WorldInspectorPlugin::new())
+        // .init_resource::<Configuration>()
+        .insert_resource(Configuration {
+            gravity: 0.0,
+            ..default()
+        })
+        .register_type::<Configuration>() // you need to register your type to display it
+        .add_plugins(ResourceInspectorPlugin::<Configuration>::default())
+        // also works with built-in resources, as long as they are `Reflect`
+        .add_plugins(ResourceInspectorPlugin::<Time>::default())
         .add_systems(Startup, setup)
         .add_systems(
             FixedUpdate,
