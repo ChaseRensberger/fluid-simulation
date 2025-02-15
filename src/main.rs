@@ -26,6 +26,8 @@ struct Configuration {
     #[inspector(min = 0.0, max = 100.0)]
     particle_size: f32,
     bounding_box_dimensions: Vec2,
+    #[inspector(min = 0.0, max = 1.0)]
+    collision_dampening_factor: f32,
 }
 
 enum BoundingBoxLocation {
@@ -114,9 +116,17 @@ fn resolve_collisions(
     mut query: Query<(&mut Transform, &mut Velocity)>,
     config: Res<Configuration>,
 ) {
+    let half_bounds_size: Vec2 =
+        config.bounding_box_dimensions / 2. - Vec2::ONE * config.particle_size;
     for (transform, mut velocity) in &mut query {
-        if transform.translation.y < -((WINDOW_DIMENSIONS.y / 2.) - config.particle_size / 2.) {
-            velocity.0.y *= -1.;
+        // TODO: fix so doesn't move past box at all
+        // also seems like this could be more generalized
+        if transform.translation.x.abs() > half_bounds_size.x {
+            velocity.0.x *= -1. * config.collision_dampening_factor;
+        }
+
+        if transform.translation.y.abs() > half_bounds_size.y {
+            velocity.0.y *= -1. * config.collision_dampening_factor;
         }
     }
 }
@@ -175,6 +185,7 @@ fn main() {
             gravity: 0.0,
             particle_size: 10.,
             bounding_box_dimensions: Vec2::new(WINDOW_DIMENSIONS.x / 2., WINDOW_DIMENSIONS.y / 2.),
+            collision_dampening_factor: 0.9,
             ..default()
         })
         .register_type::<Configuration>()
