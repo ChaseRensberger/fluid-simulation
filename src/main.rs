@@ -86,7 +86,7 @@ fn setup(
     // Particle
     commands.spawn((
         Particle,
-        Velocity(Vec3::ZERO),
+        Velocity(Vec3::new(10., 0., 0.)),
         Mesh2d(meshes.add(Circle::new(config.particle_size))),
         MeshMaterial2d(materials.add(Color::srgb(0., 0., 255.))),
         Transform::from_xyz(0., 0., 0.),
@@ -185,7 +185,7 @@ fn main() {
             gravity: 0.0,
             particle_size: 10.,
             bounding_box_dimensions: Vec2::new(WINDOW_DIMENSIONS.x / 2., WINDOW_DIMENSIONS.y / 2.),
-            collision_dampening_factor: 0.9,
+            collision_dampening_factor: 1.,
             ..default()
         })
         .register_type::<Configuration>()
